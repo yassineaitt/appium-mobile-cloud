@@ -16,8 +16,8 @@
   "scripts": {
     "prepare": "husky",
     "test": "wdio run config/wdio.conf.ts",
-    "test:android": "cross-env-shell PLATFORM=android wdio run config/wdio.conf.ts",
-    "test:ios": "cross-env-shell PLATFORM=ios wdio run config/wdio.conf.ts",
+    "test:android": "PLATFORM=android wdio run config/wdio.conf.ts",
+    "test:ios": "PLATFORM=ios wdio run config/wdio.conf.ts",
     "test:smoke": "wdio run config/wdio.conf.ts --mochaOpts.grep @smoke",
     "test:unit": "vitest run",
     "apps:download": "bash scripts/download-apps.sh",
