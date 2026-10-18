@@ -1,0 +1,48 @@
+{
+  "name": "appium-mobile-cloud",
+  "version": "0.1.0",
+  "description": "Appium + WebdriverIO (TypeScript) mobile framework: iOS and Android suites, one env-selected profile for local emulator/simulator, Sauce Labs and BrowserStack real-device clouds.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Yassine Ait Tamarmoucht",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yassineaitt/appium-mobile-cloud.git"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {},
+  "keywords": [
+    "appium",
+    "webdriverio",
+    "typescript",
+    "mobile-testing",
+    "ios",
+    "android",
+    "sauce-labs",
+    "browserstack"
+  ],
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.20.5",
+    "@wdio/appium-service": "^10.1.0",
+    "@wdio/cli": "^10.1.0",
+    "@wdio/globals": "^10.1.0",
+    "@wdio/junit-reporter": "^10.1.0",
+    "@wdio/local-runner": "^10.1.0",
+    "@wdio/mocha-framework": "^10.1.0",
+    "@wdio/sauce-service": "^10.1.0",
+    "@wdio/spec-reporter": "^10.1.0",
+    "@wdio/types": "^10.1.0",
+    "appium": "^3.8.0",
+    "appium-uiautomator2-driver": "^8.7.0",
+    "appium-xcuitest-driver": "^12.18.2",
+    "dotenv": "^18.0.8",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "webdriverio": "^10.1.0",
+    "zod": "^4.6.7"
+  }
+}
