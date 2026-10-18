@@ -29,7 +29,15 @@ export default tseslint.config(
     files: ['tests/**/*.ts', 'src/**/*.ts'],
     ...wdio.configs['flat/recommended'],
     languageOptions: {
-      globals: { ...globals.node, ...globals.mocha, browser: 'readonly', driver: 'readonly', $: 'readonly', $$: 'readonly', expect: 'readonly' },
+      globals: {
+        ...globals.node,
+        ...globals.mocha,
+        browser: 'readonly',
+        driver: 'readonly',
+        $: 'readonly',
+        $$: 'readonly',
+        expect: 'readonly',
+      },
     },
   },
   {
