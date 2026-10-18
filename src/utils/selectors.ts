@@ -21,7 +21,10 @@ export function byText(text: string): string {
 
 /** First element showing exactly `text`; lazy, so `waitForDisplayed` and `expect` still retry. */
 export function firstText(text: string): ChainablePromiseElement {
-  return $$(byText(text))[0];
+  // WebdriverIO resolves `$$()[0]` lazily (a proxy), so it is never undefined at runtime;
+  // the fallback only exists to satisfy noUncheckedIndexedAccess without a cast.
+  const selector = byText(text);
+  return $$(selector)[0] ?? $(selector);
 }
 
 /** Raw React Native testID: accessibility id on iOS, resource-id on Android. */
