@@ -17,8 +17,9 @@ class SwipeScreen extends BaseScreen {
     super('Swipe-screen');
   }
 
-  get card(): ChainablePromiseElement {
-    return $(byId('card'));
+  /** The carousel renders every slide; swipe on the screen container, whose centre is the active card. */
+  get carousel(): ChainablePromiseElement {
+    return $(byId('Swipe-screen'));
   }
 
   cardTitle(title: string): ChainablePromiseElement {
@@ -26,11 +27,11 @@ class SwipeScreen extends BaseScreen {
   }
 
   async next(): Promise<void> {
-    await swipeLeft(this.card);
+    await swipeLeft(this.carousel, 0.6);
   }
 
   async previous(): Promise<void> {
-    await swipeRight(this.card);
+    await swipeRight(this.carousel, 0.6);
   }
 }
 

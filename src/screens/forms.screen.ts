@@ -38,10 +38,20 @@ class FormsScreen extends BaseScreen {
     await this.switch.click();
   }
 
+  get dropdownPlaceholder(): ChainablePromiseElement {
+    return $(byText('Select an item...'));
+  }
+
   async selectDropdownOption(label: string): Promise<void> {
-    await this.dropdown.click();
     const option = $(byText(label));
-    await option.waitForDisplayed({ timeout: 10_000 });
+    // The picker's touchable wrapper is marked non-accessible; tapping the visible
+    // placeholder text is what a user does and works on both platforms.
+    await this.dropdownPlaceholder.click();
+    const opened = await option.waitForDisplayed({ timeout: 5_000 }).catch(() => false);
+    if (!opened) {
+      await this.dropdown.click();
+      await option.waitForDisplayed({ timeout: 10_000 });
+    }
     await option.click();
   }
 

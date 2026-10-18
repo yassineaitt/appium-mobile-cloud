@@ -1,11 +1,15 @@
-import { byId } from '@utils/selectors';
+import { byButton } from '@utils/selectors';
 
 export type TabName = 'Home' | 'Webview' | 'Login' | 'Forms' | 'Swipe' | 'Drag';
 
-/** Bottom tab bar. Tabs expose their label as the accessibility name on both platforms. */
+/**
+ * Bottom tab bar. Tabs are accessible buttons named after their label on both platforms;
+ * matching on the button role keeps the selector unique even when a screen shows the
+ * same word elsewhere (e.g. the Login form on the Login tab).
+ */
 class TabBar {
   tab(name: TabName): ChainablePromiseElement {
-    return $(byId(name));
+    return $(byButton(name));
   }
 
   async open(name: TabName): Promise<void> {
