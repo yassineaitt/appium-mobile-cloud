@@ -1,4 +1,4 @@
-import { byId, byText } from '@utils/selectors';
+import { byId, byTestId, firstText } from '@utils/selectors';
 import { hideKeyboard } from '@utils/keyboard';
 import { BaseScreen } from './base.screen';
 
@@ -38,17 +38,17 @@ class FormsScreen extends BaseScreen {
     await this.switch.click();
   }
 
-  get dropdownPlaceholder(): ChainablePromiseElement {
-    return $(byText('Select an item...'));
+  /** The picker's chevron carries a raw testID and toggles the list on both platforms. */
+  get dropdownChevron(): ChainablePromiseElement {
+    return $(byTestId('dropdown-chevron'));
   }
 
   async selectDropdownOption(label: string): Promise<void> {
-    const option = $(byText(label));
-    // The picker's touchable wrapper is marked non-accessible; tapping the visible
-    // placeholder text is what a user does and works on both platforms.
-    await this.dropdownPlaceholder.click();
+    const option = firstText(label);
+    await this.dropdownChevron.click();
     const opened = await option.waitForDisplayed({ timeout: 5_000 }).catch(() => false);
     if (!opened) {
+      // Fallback: the touchable wrapper (accessible=false, but still tappable by id).
       await this.dropdown.click();
       await option.waitForDisplayed({ timeout: 10_000 });
     }
@@ -56,7 +56,7 @@ class FormsScreen extends BaseScreen {
   }
 
   dropdownValue(label: string): ChainablePromiseElement {
-    return $(byText(label));
+    return firstText(label);
   }
 }
 

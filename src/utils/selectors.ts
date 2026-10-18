@@ -9,11 +9,24 @@
  */
 export const byId = (id: string): string => `~${id}`;
 
-/** A text node showing exactly `text`. */
+/**
+ * A text node showing exactly `text`. React Native on iOS can expose the same label on a
+ * wrapper and its inner StaticText, so callers that need a single element use `firstText`.
+ */
 export function byText(text: string): string {
   return driver.isIOS
     ? `-ios predicate string:type == "XCUIElementTypeStaticText" AND (label == "${text}" OR value == "${text}")`
     : `android=new UiSelector().className("android.widget.TextView").text("${text}")`;
+}
+
+/** First element showing exactly `text`; lazy, so `waitForDisplayed` and `expect` still retry. */
+export function firstText(text: string): ChainablePromiseElement {
+  return $$(byText(text))[0];
+}
+
+/** Raw React Native testID: accessibility id on iOS, resource-id on Android. */
+export function byTestId(id: string): string {
+  return driver.isIOS ? `~${id}` : `id=${id}`;
 }
 
 /** A tappable control whose accessible name is `name` (tab bar items, native buttons). */

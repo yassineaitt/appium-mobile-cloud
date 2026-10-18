@@ -1,4 +1,4 @@
-import { byId, byText } from '@utils/selectors';
+import { byId, firstText } from '@utils/selectors';
 import { swipeLeft, swipeRight } from '@utils/gestures';
 import { BaseScreen } from './base.screen';
 
@@ -23,7 +23,7 @@ class SwipeScreen extends BaseScreen {
   }
 
   cardTitle(title: string): ChainablePromiseElement {
-    return $(byText(title));
+    return firstText(title);
   }
 
   async next(): Promise<void> {
