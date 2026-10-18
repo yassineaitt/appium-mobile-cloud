@@ -9,6 +9,7 @@ export function iosLocalCapabilities(env: Env): WebdriverIO.Capabilities {
     'appium:automationName': 'XCUITest',
     'appium:deviceName': env.IOS_DEVICE_NAME,
     ...(env.IOS_PLATFORM_VERSION && { 'appium:platformVersion': env.IOS_PLATFORM_VERSION }),
+    ...(env.IOS_UDID && { 'appium:udid': env.IOS_UDID }),
     'appium:app': env.APP_IOS ?? path.join(APPS_DIR, APP_FILES.ios),
     'appium:newCommandTimeout': 240,
     // WebDriverAgent is compiled on first run; CI runners need the long timeouts.

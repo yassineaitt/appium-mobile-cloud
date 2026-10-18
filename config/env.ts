@@ -23,6 +23,7 @@ export const EnvSchema = z.object({
   ANDROID_PLATFORM_VERSION: optional,
   IOS_DEVICE_NAME: z.string().default('iPhone 16'),
   IOS_PLATFORM_VERSION: optional,
+  IOS_UDID: optional,
   APP_ANDROID: optional,
   APP_IOS: optional,
   APPIUM_PORT: z.coerce.number().int().positive().default(4723),
