@@ -1,0 +1,273 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Only run tests whose title matches (e.g. @smoke)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+  APPIUM_HOME: ${{ github.workspace }}/.appium
+  GREP: ${{ inputs.grep || '' }}
+
+jobs:
+  quality:
+    name: Lint · Typecheck · Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run test:unit
+
+  preflight:
+    name: Detect cloud credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      sauce: ${{ steps.detect.outputs.sauce }}
+      sauce_ios: ${{ steps.detect.outputs.sauce_ios }}
+      browserstack: ${{ steps.detect.outputs.browserstack }}
+      browserstack_ios: ${{ steps.detect.outputs.browserstack_ios }}
+    steps:
+      # Secrets are not readable in job-level `if:`; expose their presence (never their value).
+      - id: detect
+        env:
+          SAUCE: ${{ secrets.SAUCE_USERNAME != '' && secrets.SAUCE_ACCESS_KEY != '' }}
+          SAUCE_IOS: ${{ secrets.SAUCE_IOS_APP != '' }}
+          BSTACK: ${{ secrets.BROWSERSTACK_USERNAME != '' && secrets.BROWSERSTACK_ACCESS_KEY != '' && secrets.BROWSERSTACK_ANDROID_APP != '' }}
+          BSTACK_IOS: ${{ secrets.BROWSERSTACK_IOS_APP != '' }}
+        run: |
+          {
+            echo "sauce=$SAUCE"
+            echo "sauce_ios=$SAUCE_IOS"
+            echo "browserstack=$BSTACK"
+            echo "browserstack_ios=$BSTACK_IOS"
+          } >> "$GITHUB_OUTPUT"
+          echo "::notice::Sauce Labs: $SAUCE (iOS app: $SAUCE_IOS) · BrowserStack: $BSTACK (iOS app: $BSTACK_IOS)"
+
+  android-emulator:
+    name: Android · local emulator (API ${{ matrix.api-level }})
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [34]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Enable KVM for hardware-accelerated emulation
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download demo app (checksum verified)
+        run: npm run apps:download -- android
+      - name: Install Appium UiAutomator2 driver
+        run: npx appium driver install uiautomator2
+
+      - name: Cache AVD
+        uses: actions/cache@v5
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-x86_64-google_apis-v1
+
+      - name: Create AVD snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "AVD snapshot generated"
+
+      - name: Run Android suite on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          emulator-boot-timeout: 900
+          script: |
+            adb devices
+            PLATFORM=android CLOUD=local npx wdio run config/wdio.conf.ts ${GREP:+--mochaOpts.grep "$GREP"}
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reports-android-emulator-api${{ matrix.api-level }}
+          path: reports
+          retention-days: 14
+
+  ios-simulator:
+    name: iOS · local simulator
+    runs-on: macos-15
+    needs: quality
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app
+          xcodebuild -version
+
+      - name: Download demo app (checksum verified)
+        run: npm run apps:download -- ios
+      - name: Install Appium XCUITest driver
+        run: npx appium driver install xcuitest
+
+      - name: Pick and pre-boot a simulator
+        id: sim
+        run: |
+          json=$(xcrun simctl list devices available -j)
+          # Newest iOS runtime that has an iPhone 16; fall back to any iPhone.
+          read -r udid name version < <(echo "$json" | node -e '
+            const d=JSON.parse(require("fs").readFileSync(0,"utf8")).devices;
+            const rows=[];
+            for (const [rt,devs] of Object.entries(d)) {
+              const m=rt.match(/iOS-(\d+)-(\d+)/); if(!m) continue;
+              for (const x of devs) if (x.isAvailable && /iPhone/.test(x.name)) rows.push({udid:x.udid,name:x.name,v:`${m[1]}.${m[2]}`,pref:/iPhone 16$/.test(x.name)?1:0});
+            }
+            rows.sort((a,b)=>b.pref-a.pref||parseFloat(b.v)-parseFloat(a.v));
+            const r=rows[0]; console.log(`${r.udid} ${r.name.replace(/ /g,"_")} ${r.v}`);')
+          name=${name//_/ }
+          echo "Using $name ($version) $udid"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          {
+            echo "udid=$udid"; echo "name=$name"; echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run iOS suite on the simulator
+        env:
+          PLATFORM: ios
+          CLOUD: local
+          IOS_UDID: ${{ steps.sim.outputs.udid }}
+          IOS_DEVICE_NAME: ${{ steps.sim.outputs.name }}
+          IOS_PLATFORM_VERSION: ${{ steps.sim.outputs.version }}
+        run: npx wdio run config/wdio.conf.ts ${GREP:+--mochaOpts.grep "$GREP"}
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reports-ios-simulator
+          path: reports
+          retention-days: 14
+
+  sauce-labs:
+    name: Sauce Labs · ${{ matrix.platform }} real device
+    runs-on: ubuntu-latest
+    needs: [quality, preflight]
+    if: needs.preflight.outputs.sauce == 'true'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Run on Sauce Labs
+        # iOS real devices need a signed .ipa in Sauce storage; skip until SAUCE_IOS_APP is set.
+        if: matrix.platform == 'android' || needs.preflight.outputs.sauce_ios == 'true'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          CLOUD: sauce
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+          SAUCE_REGION: ${{ vars.SAUCE_REGION || 'us-west-1' }}
+          SAUCE_IOS_APP: ${{ secrets.SAUCE_IOS_APP }}
+        run: npx wdio run config/wdio.conf.ts ${GREP:+--mochaOpts.grep "$GREP"}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reports-sauce-${{ matrix.platform }}
+          path: reports
+          retention-days: 14
+
+  browserstack:
+    name: BrowserStack · ${{ matrix.platform }} real device
+    runs-on: ubuntu-latest
+    needs: [quality, preflight]
+    if: needs.preflight.outputs.browserstack == 'true'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Run on BrowserStack
+        if: matrix.platform == 'android' || needs.preflight.outputs.browserstack_ios == 'true'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          CLOUD: browserstack
+          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          BROWSERSTACK_ANDROID_APP: ${{ secrets.BROWSERSTACK_ANDROID_APP }}
+          BROWSERSTACK_IOS_APP: ${{ secrets.BROWSERSTACK_IOS_APP }}
+        run: npx wdio run config/wdio.conf.ts ${GREP:+--mochaOpts.grep "$GREP"}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reports-browserstack-${{ matrix.platform }}
+          path: reports
+          retention-days: 14
