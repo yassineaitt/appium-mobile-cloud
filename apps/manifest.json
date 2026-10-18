@@ -1,0 +1,22 @@
+{
+  "source": "https://github.com/webdriverio/native-demo-app/releases/tag/v2.2.0",
+  "apps": [
+    {
+      "platform": "android",
+      "file": "android.wdio.native.app.v2.2.0.apk",
+      "url": "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk",
+      "sha256": "fe1d605ce099c73d93f33e5cbcb0df0bea437ce57aaaaf156b3b0fa1ca54931d",
+      "package": "com.wdiodemoapp"
+    },
+    {
+      "platform": "ios",
+      "file": "ios.simulator.wdio.native.app.v2.2.0.zip",
+      "unzipTo": "wdiodemoapp.app",
+      "url": "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/ios.simulator.wdio.native.app.v2.2.0.zip",
+      "sha256": "84c7efda441f7a8ed37bb1527bae357de8a44a16f878996d52bdfd9d58a8c66a",
+      "bundleId": "org.wdiodemoapp",
+      "arch": "arm64",
+      "minimumOS": "15.1"
+    }
+  ]
+}
