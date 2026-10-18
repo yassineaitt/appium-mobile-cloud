@@ -13,7 +13,23 @@
   "engines": {
     "node": ">=22.19"
   },
-  "scripts": {},
+  "scripts": {
+    "prepare": "husky",
+    "test": "wdio run config/wdio.conf.ts",
+    "test:android": "cross-env-shell PLATFORM=android wdio run config/wdio.conf.ts",
+    "test:ios": "cross-env-shell PLATFORM=ios wdio run config/wdio.conf.ts",
+    "test:smoke": "wdio run config/wdio.conf.ts --mochaOpts.grep @smoke",
+    "test:unit": "vitest run",
+    "apps:download": "bash scripts/download-apps.sh",
+    "apps:upload": "bash scripts/upload-apps.sh",
+    "appium:setup": "appium driver install uiautomator2 && appium driver install xcuitest",
+    "appium:doctor": "appium driver doctor uiautomator2 && appium driver doctor xcuitest",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit"
+  },
   "keywords": [
     "appium",
     "webdriverio",
@@ -25,6 +41,9 @@
     "browserstack"
   ],
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.5",
     "@wdio/appium-service": "^10.1.0",
@@ -40,9 +59,27 @@
     "appium-uiautomator2-driver": "^8.7.0",
     "appium-xcuitest-driver": "^12.18.2",
     "dotenv": "^18.0.8",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-wdio": "^10.0.1",
+    "globals": "^17.13.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.5",
     "webdriverio": "^10.1.0",
     "zod": "^4.6.7"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{js,json,md,yml,yaml,sh}": [
+      "prettier --write --ignore-unknown"
+    ]
   }
 }
