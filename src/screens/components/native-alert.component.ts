@@ -1,17 +1,26 @@
 import { alertSelectors } from '@utils/selectors';
 
 /**
- * Native alert dialogs (UIAlertController / AlertDialog). Uses the WebDriver alert
- * endpoints where they work and falls back to element lookups for existence checks,
- * because `getAlertText` throws instead of returning "no alert".
+ * Native alert dialogs (UIAlertController / AlertDialog). Presence is detected through the
+ * WebDriver alert endpoint, which both XCUITest and UiAutomator2 implement for system
+ * dialogs, so it does not depend on platform-specific view ids. `getAlertText` throws when
+ * no alert is open, hence the try/catch.
  */
 class NativeAlert {
   async waitForIsShown(isShown = true, timeout = 10_000): Promise<void> {
-    await $(alertSelectors.container()).waitForExist({ timeout, reverse: !isShown });
+    await browser.waitUntil(async () => (await this.isShown()) === isShown, {
+      timeout,
+      timeoutMsg: `expected native alert to be ${isShown ? 'shown' : 'gone'} within ${timeout}ms`,
+    });
   }
 
   async isShown(): Promise<boolean> {
-    return $(alertSelectors.container()).isExisting();
+    try {
+      await driver.getAlertText();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async text(): Promise<string> {

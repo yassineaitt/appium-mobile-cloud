@@ -16,7 +16,7 @@ export const byId = (id: string): string => `~${id}`;
 export function byText(text: string): string {
   return driver.isIOS
     ? `-ios predicate string:type == "XCUIElementTypeStaticText" AND (label == "${text}" OR value == "${text}")`
-    : `android=new UiSelector().className("android.widget.TextView").text("${text}")`;
+    : `android=new UiSelector().text("${text}")`; // spinner rows are CheckedTextView, not TextView
 }
 
 /** First element showing exactly `text`; lazy, so `waitForDisplayed` and `expect` still retry. */
@@ -48,5 +48,5 @@ export const alertSelectors = {
   button: (label: string): string =>
     driver.isIOS
       ? `-ios predicate string:type == "XCUIElementTypeButton" AND name == "${label}"`
-      : `android=new UiSelector().className("android.widget.Button").textMatches("(?i)${label}")`,
+      : `android=new UiSelector().textMatches("(?i)${label}").clickable(true)`,
 };
