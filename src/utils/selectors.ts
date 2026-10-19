@@ -27,6 +27,14 @@ export function firstText(text: string): ChainablePromiseElement {
   return $$(selector)[0] ?? $(selector);
 }
 
+/** First *visible* element showing `text`, any type; for values that also exist off-screen. */
+export function visibleText(text: string): ChainablePromiseElement {
+  const selector = driver.isIOS
+    ? `-ios predicate string:(label == "${text}" OR value == "${text}") AND visible == 1`
+    : byText(text);
+  return $$(selector)[0] ?? $(selector);
+}
+
 /** Raw React Native testID: accessibility id on iOS, resource-id on Android. */
 export function byTestId(id: string): string {
   return driver.isIOS ? `~${id}` : `id=${id}`;

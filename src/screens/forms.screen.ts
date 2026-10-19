@@ -1,4 +1,4 @@
-import { byButton, byId, firstText } from '@utils/selectors';
+import { byButton, byId, firstText, visibleText } from '@utils/selectors';
 import { hideKeyboard } from '@utils/keyboard';
 import { BaseScreen } from './base.screen';
 
@@ -67,8 +67,9 @@ class FormsScreen extends BaseScreen {
     await option.click();
   }
 
+  /** The chosen value as shown in the field (the picker rows keep the same label off-screen). */
   dropdownValue(label: string): ChainablePromiseElement {
-    return firstText(label);
+    return visibleText(label);
   }
 }
 
