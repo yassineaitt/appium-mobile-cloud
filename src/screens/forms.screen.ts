@@ -1,4 +1,4 @@
-import { byId, byTestId, firstText } from '@utils/selectors';
+import { byButton, byId, firstText } from '@utils/selectors';
 import { hideKeyboard } from '@utils/keyboard';
 import { BaseScreen } from './base.screen';
 
@@ -38,20 +38,21 @@ class FormsScreen extends BaseScreen {
     await this.switch.click();
   }
 
-  /** The picker's chevron carries a raw testID and toggles the list on both platforms. */
-  get dropdownChevron(): ChainablePromiseElement {
-    return $(byTestId('dropdown-chevron'));
-  }
-
+  /**
+   * The dropdown is a native picker underneath: a UIPickerView with a "Done" toolbar on
+   * iOS, a Spinner dialog on Android. Same intent, two platform flows.
+   */
   async selectDropdownOption(label: string): Promise<void> {
-    const option = firstText(label);
-    await this.dropdownChevron.click();
-    const opened = await option.waitForDisplayed({ timeout: 5_000 }).catch(() => false);
-    if (!opened) {
-      // Fallback: the touchable wrapper (accessible=false, but still tappable by id).
-      await this.dropdown.click();
-      await option.waitForDisplayed({ timeout: 10_000 });
+    await this.dropdown.click();
+    if (driver.isIOS) {
+      const wheel = $('-ios class chain:**/XCUIElementTypePickerWheel');
+      await wheel.waitForExist({ timeout: 10_000 });
+      await wheel.addValue(label); // XCUITest scrolls the wheel to the matching row
+      await $(byButton('Done')).click();
+      return;
     }
+    const option = firstText(label);
+    await option.waitForDisplayed({ timeout: 10_000 });
     await option.click();
   }
 

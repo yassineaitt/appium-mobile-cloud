@@ -41,7 +41,10 @@ export function byButton(name: string): string {
 
 export const alertSelectors = {
   container: (): string =>
-    driver.isIOS ? '-ios class chain:**/XCUIElementTypeAlert' : 'id=android:id/alertTitle',
+    driver.isIOS
+      ? '-ios class chain:**/XCUIElementTypeAlert'
+      : // AppCompat dialogs namespace the title under the app package, not android:id.
+        'android=new UiSelector().resourceIdMatches(".*:id/alertTitle")',
   button: (label: string): string =>
     driver.isIOS
       ? `-ios predicate string:type == "XCUIElementTypeButton" AND name == "${label}"`
