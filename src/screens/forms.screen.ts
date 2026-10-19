@@ -1,4 +1,4 @@
-import { byId, byText } from '@utils/selectors';
+import { byButton, byId, firstText, visibleText } from '@utils/selectors';
 import { hideKeyboard } from '@utils/keyboard';
 import { BaseScreen } from './base.screen';
 
@@ -38,15 +38,38 @@ class FormsScreen extends BaseScreen {
     await this.switch.click();
   }
 
+  /**
+   * The dropdown is a native picker underneath: a UIPickerView with a "Done" toolbar on
+   * iOS, a Spinner dialog on Android. Same intent, two platform flows.
+   */
+  /** iOS only: the chevron icon carries a raw testID and is what opens the wheel. */
+  get dropdownChevron(): ChainablePromiseElement {
+    return $('~dropdown-chevron');
+  }
+
   async selectDropdownOption(label: string): Promise<void> {
+    if (driver.isIOS) {
+      // The touchable wrapper is accessible=false on iOS; the chevron reliably opens the picker.
+      await this.dropdownChevron.click();
+      const wheel = $('-ios class chain:**/XCUIElementTypePickerWheel');
+      await wheel.waitForExist({ timeout: 10_000 });
+      await wheel.addValue(label); // XCUITest scrolls the wheel to the matching row
+      // The toolbar "Done" is a React Native touchable, not a UIKit button: match by label.
+      const done = $$(
+        '-ios predicate string:(name == "Done" OR label == "Done") AND visible == 1',
+      )[0];
+      await (done ?? $(byButton('Done'))).click();
+      return;
+    }
     await this.dropdown.click();
-    const option = $(byText(label));
+    const option = firstText(label);
     await option.waitForDisplayed({ timeout: 10_000 });
     await option.click();
   }
 
+  /** The chosen value as shown in the field (the picker rows keep the same label off-screen). */
   dropdownValue(label: string): ChainablePromiseElement {
-    return $(byText(label));
+    return visibleText(label);
   }
 }
 

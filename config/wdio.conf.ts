@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { env, REPORTS_DIR, ROOT_DIR, buildName } from './env';
 import { resolveProfile } from './profiles';
+import { dismissSystemDialogs } from '../src/utils/system-dialogs';
 
 const profile = resolveProfile(env);
 const junitDir = path.join(REPORTS_DIR, 'junit');
@@ -49,6 +50,14 @@ export const config: WebdriverIO.Config = {
 
   onPrepare() {
     console.info(`▶ profile=${profile.name} build=${buildName(env)}`);
+  },
+
+  async before() {
+    await dismissSystemDialogs();
+  },
+
+  async beforeTest() {
+    await dismissSystemDialogs();
   },
 
   async afterTest(test, _context, { passed }) {

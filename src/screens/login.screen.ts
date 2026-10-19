@@ -1,4 +1,4 @@
-import { byId, byText } from '@utils/selectors';
+import { byId, firstText } from '@utils/selectors';
 import { hideKeyboard } from '@utils/keyboard';
 import { BaseScreen } from './base.screen';
 
@@ -35,7 +35,7 @@ class LoginScreen extends BaseScreen {
   }
 
   validationMessage(text: string): ChainablePromiseElement {
-    return $(byText(text));
+    return firstText(text);
   }
 
   async login({ email, password }: Credentials): Promise<void> {
