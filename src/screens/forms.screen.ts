@@ -42,15 +42,22 @@ class FormsScreen extends BaseScreen {
    * The dropdown is a native picker underneath: a UIPickerView with a "Done" toolbar on
    * iOS, a Spinner dialog on Android. Same intent, two platform flows.
    */
+  /** iOS only: the chevron icon carries a raw testID and is what opens the wheel. */
+  get dropdownChevron(): ChainablePromiseElement {
+    return $('~dropdown-chevron');
+  }
+
   async selectDropdownOption(label: string): Promise<void> {
-    await this.dropdown.click();
     if (driver.isIOS) {
+      // The touchable wrapper is accessible=false on iOS; the chevron reliably opens the picker.
+      await this.dropdownChevron.click();
       const wheel = $('-ios class chain:**/XCUIElementTypePickerWheel');
       await wheel.waitForExist({ timeout: 10_000 });
       await wheel.addValue(label); // XCUITest scrolls the wheel to the matching row
       await $(byButton('Done')).click();
       return;
     }
+    await this.dropdown.click();
     const option = firstText(label);
     await option.waitForDisplayed({ timeout: 10_000 });
     await option.click();
