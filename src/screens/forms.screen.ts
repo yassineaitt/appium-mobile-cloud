@@ -54,7 +54,11 @@ class FormsScreen extends BaseScreen {
       const wheel = $('-ios class chain:**/XCUIElementTypePickerWheel');
       await wheel.waitForExist({ timeout: 10_000 });
       await wheel.addValue(label); // XCUITest scrolls the wheel to the matching row
-      await $(byButton('Done')).click();
+      // The toolbar "Done" is a React Native touchable, not a UIKit button: match by label.
+      const done = $$(
+        '-ios predicate string:(name == "Done" OR label == "Done") AND visible == 1',
+      )[0];
+      await (done ?? $(byButton('Done'))).click();
       return;
     }
     await this.dropdown.click();
