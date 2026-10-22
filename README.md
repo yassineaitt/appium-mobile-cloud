@@ -60,14 +60,14 @@ under `config/` and in CI.
 
 ## Device matrix
 
-| Target                   | Where it runs                 | Device(s)                                       | Trigger                           |
-| ------------------------ | ----------------------------- | ----------------------------------------------- | --------------------------------- |
-| `local` · Android        | GitHub `ubuntu-latest` + KVM  | Pixel 6 AVD, API 34, x86_64 (Google APIs)       | every push / PR                   |
-| `local` · iOS            | GitHub `macos-15`, Xcode 16.4 | newest available iPhone 16 simulator (iOS 18.x) | every push / PR                   |
-| `sauce` · Android        | Sauce Labs real device cloud  | `Google Pixel.*` (regex, first free unit)       | only when `SAUCE_*` secrets exist |
-| `sauce` · iOS            | Sauce Labs real device cloud  | `iPhone.*`                                      | + `SAUCE_IOS_APP` (signed .ipa)   |
-| `browserstack` · Android | BrowserStack App Automate     | Google Pixel 8 · Android 14                     | only when `BROWSERSTACK_*` exist  |
-| `browserstack` · iOS     | BrowserStack App Automate     | iPhone 15 · iOS 17                              | + `BROWSERSTACK_IOS_APP`          |
+| Target                   | Where it runs                 | Device(s)                                             | Trigger                           |
+| ------------------------ | ----------------------------- | ----------------------------------------------------- | --------------------------------- |
+| `local` · Android        | GitHub `ubuntu-latest` + KVM  | Pixel 6 AVD, API 34, x86_64 (Google APIs)             | every push / PR                   |
+| `local` · iOS            | GitHub `macos-15`, Xcode 16.4 | newest available iPhone 16 simulator (iOS 26.x today) | every push / PR                   |
+| `sauce` · Android        | Sauce Labs real device cloud  | `Google Pixel.*` (regex, first free unit)             | only when `SAUCE_*` secrets exist |
+| `sauce` · iOS            | Sauce Labs real device cloud  | `iPhone.*`                                            | + `SAUCE_IOS_APP` (signed .ipa)   |
+| `browserstack` · Android | BrowserStack App Automate     | Google Pixel 8 · Android 14                           | only when `BROWSERSTACK_*` exist  |
+| `browserstack` · iOS     | BrowserStack App Automate     | iPhone 15 · iOS 17                                    | + `BROWSERSTACK_IOS_APP`          |
 
 Every device/OS value is an environment variable (see `.env.example`), so a matrix row is a
 one-line change in CI, not a code change.
