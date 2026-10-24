@@ -8,6 +8,11 @@ const ANR_WAIT_BUTTON =
   'android=new UiSelector().className("android.widget.Button").textMatches("(?i)wait")';
 const ANR_TITLE = 'android=new UiSelector().textContains("isn\'t responding")';
 
+/** True for the text of an Android ANR dialog ("System UI isn't responding", "Pixel Launcher isn't responding"). */
+export function isSystemAnr(text: string): boolean {
+  return /isn['’]t responding/i.test(text);
+}
+
 export async function dismissSystemDialogs(): Promise<boolean> {
   if (!driver.isAndroid) return false;
   const title = await $$(ANR_TITLE);

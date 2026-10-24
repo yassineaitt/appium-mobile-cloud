@@ -1,4 +1,5 @@
 import { alertSelectors } from '@utils/selectors';
+import { dismissSystemDialogs, isSystemAnr } from '@utils/system-dialogs';
 
 /**
  * Native alert dialogs (UIAlertController / AlertDialog). Presence is detected through the
@@ -15,12 +16,19 @@ class NativeAlert {
   }
 
   async isShown(): Promise<boolean> {
+    let text: string;
     try {
-      await driver.getAlertText();
-      return true;
+      text = await driver.getAlertText();
     } catch {
       return false;
     }
+    // UiAutomator2 reports system ANR dialogs through the same alert endpoint. Those belong
+    // to the emulator, not to the app, so dismiss them and keep waiting for the real alert.
+    if (isSystemAnr(text)) {
+      await dismissSystemDialogs();
+      return false;
+    }
+    return true;
   }
 
   async text(): Promise<string> {

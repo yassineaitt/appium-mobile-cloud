@@ -150,6 +150,11 @@ jobs:
             adb devices
             # Let the system shell settle after boot; it is the main source of "System UI isn't responding".
             adb shell 'sleep 25; dumpsys window | grep -m1 mCurrentFocus' || true
+            # Headless emulators on shared runners raise ANR dialogs for the shell and the launcher
+            # ("System UI / Pixel Launcher isn't responding"). They are not the app under test, so hide
+            # them system-wide instead of racing to dismiss them mid-test.
+            adb shell settings put global hide_error_dialogs 1
+            adb shell settings put secure anr_show_background 0
             PLATFORM=android CLOUD=local npx wdio run config/wdio.conf.ts ${GREP:+--mochaOpts.grep "$GREP"}
 
       - uses: actions/upload-artifact@v7
